@@ -14,7 +14,17 @@ module.exports = agent => {
 
     await initConsumer(agent, client);
     await initProducer(agent, client);
-  })
+  });
+  // 轮询结果
+  agent.messenger.on('@egg-aliyunmq/consumer/polling', async () => {
+    agent.logger.info('@egg-aliyunmq/consumer/polling');
+    const config = agent.config.aliyunmq;
+    const { auth } = config;
+    const { endpoint, accessKeyId, accessKeySecret } = auth;
+    const client = new MQClient(endpoint, accessKeyId, accessKeySecret);
+    await initConsumer(agent, client);
+  });
+
 }
 
 async function initProducer(agent, client) {
@@ -58,6 +68,8 @@ async function initConsumer(agent, client) {
         }
         catch (e) {
           // console.log(e);
+          // 只有在异常的时候，也就是没有消息的时候才会获取
+          _polling();
         }
 
         if (res.code == 200) {
@@ -95,7 +107,6 @@ async function initConsumer(agent, client) {
             });
           }
         }
-        _polling();
       })();
     } catch (e) {
       _polling();
