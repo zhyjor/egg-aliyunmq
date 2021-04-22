@@ -50,6 +50,14 @@ async function initProducer(agent, client) {
   }
 }
 
+function pending() {
+  return new Promise((resole) => {
+    setTimeout(() => {
+      resole(true);
+    }, 50 * 1000);
+  })
+}
+
 async function initConsumer(agent, client) {
   const config = agent.config.aliyunmq;
   if (!config && config.consumer) return;
@@ -67,7 +75,7 @@ async function initConsumer(agent, client) {
           res = await consumer.consumeMessage(1, 10);
         }
         catch (e) {
-          // console.log(e);
+          console.log(e);
           // 只有在异常的时候，也就是没有消息的时候才会获取
           _polling();
         }
@@ -106,6 +114,8 @@ async function initConsumer(agent, client) {
               payload: data,
             });
           }
+        }else{
+          agent.logger.info(`${topic} res: not 200, ${JSON.stringify(res)}`);
         }
       })();
     } catch (e) {
