@@ -5,6 +5,8 @@ const {
   MessageProperties
 } = require('@aliyunmq/mq-http-sdk');
 
+const topicPullingFlag = { };
+
 module.exports = agent => {
   agent.messenger.on('@egg-aliyunmq/init', async (auth) => {
     const config = agent.config.aliyunmq;
@@ -39,6 +41,8 @@ async function initProducer(agent, client) {
     const { instanceId, groupId, topic } = topicsList[i];
     const producer = client.getProducer(instanceId, topic);
 
+    agent.messenger.removeAllListeners(`@egg-aliyunmq/producer/${topic}`);
+
     agent.messenger.on(`@egg-aliyunmq/producer/${topic}`, async payload => {
       const { body, tag } = payload;
       try {
@@ -66,11 +70,15 @@ async function initConsumer(agent, client) {
 
   const { options, topicsList } = config.consumer;
 
+  const pollingSignature = Symbol();
+
   for (let i = 0, len = topicsList.length; i < len; i++) {
     try {
       const { groupId, topic, instanceId, serviceFolderName, fileNameWithMethod } = topicsList[i];
       const consumer = client.getConsumer(instanceId, topic, groupId);
+      topicPullingFlag[topic] = pollingSignature;
       (async function _polling() {
+        if (topicPullingFlag[topic] !== pollingSignature) return;
         agent.logger.info('polling... ... ...');
         let res = {};
         try {
