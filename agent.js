@@ -83,9 +83,9 @@ async function initConsumer(agent, client) {
         let res = {};
         try {
           res = await consumer.consumeMessage(1, 10);
+          if (topicPullingFlag[topic] !== pollingSignature) return;
         }
         catch (e) {
-
           if (e && e.Code === 'MessageNotExist') {
             agent.logger.error('MQ is empty!!!!!');
           } else {
